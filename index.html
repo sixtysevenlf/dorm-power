@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0f1116">
+<title>宿舍电费 · 17号楼321</title>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;min-height:100vh;background:#0f1116;color:#eef1f7;
+ font-family:-apple-system,"HarmonyOS Sans SC","PingFang SC","Noto Sans CJK SC",sans-serif;
+ display:flex;flex-direction:column;align-items:center;padding:28px 18px 40px}
+h1{font-size:17px;font-weight:600;color:#9aa4b8;margin:0 0 22px;letter-spacing:.5px}
+.card{width:100%;max-width:420px;background:#171a21;border-radius:20px;padding:26px 22px;border:1px solid #232734}
+.num{font-size:64px;font-weight:700;line-height:1;letter-spacing:-2px;font-variant-numeric:tabular-nums}
+.num.low{color:#ff5d5d}.num.warn{color:#ffb648}.num.good{color:#3ddc97}
+.unit{font-size:22px;font-weight:500;color:#7c8798;margin-left:6px}
+.sub{margin-top:10px;font-size:14px;color:#8b95a7}
+.bar{height:10px;border-radius:6px;background:#242833;margin-top:20px;overflow:hidden}
+.fill{height:100%;border-radius:6px;transition:width .4s}
+.rows{margin-top:22px;display:grid;gap:10px}
+.row{display:flex;justify-content:space-between;font-size:14px;color:#9aa4b8}
+.row b{color:#e7ebf3;font-weight:500}
+.alert{margin-top:18px;padding:12px 14px;border-radius:12px;font-size:14px;line-height:1.45;
+ background:#2a1416;color:#ff8a8a;border:1px solid #4a1d20}
+.btn{margin-top:20px;width:100%;padding:14px;border:0;border-radius:14px;background:#2a2f3d;color:#dfe5f0;
+ font-size:15px;font-weight:600}
+.btn:active{background:#343b4c}
+a.pay{display:block;margin-top:10px;text-align:center;padding:14px;border-radius:14px;
+ background:#2563eb;color:#fff;text-decoration:none;font-size:15px;font-weight:600}
+.foot{margin-top:16px;font-size:12px;color:#5d6675;text-align:center}
+</style>
+</head>
+<body>
+<h1>长安校区 17号楼 321</h1>
+<div class="card">
+  <div><span class="num" id="num">--</span><span class="unit">度</span></div>
+  <div class="sub" id="status">读取中…</div>
+  <div class="bar"><div class="fill" id="fill" style="width:0;background:#3ddc97"></div></div>
+  <div id="warn"></div>
+  <div class="rows">
+    <div class="row"><span>表号</span><b id="meter">—</b></div>
+    <div class="row"><span>累计用量</span><b id="used">—</b></div>
+    <div class="row"><span>提醒阈值</span><b>5 度</b></div>
+    <div class="row"><span>数据时间</span><b id="at">—</b></div>
+  </div>
+  <button class="btn" id="btn">立即刷新</button>
+  <a class="pay" href="https://yktydfw.nwu.edu.cn/charge-app/#/pays?id=411">去充值</a>
+  <div class="foot" id="foot">每 30 秒自动刷新</div>
+</div>
+<script>
+const $ = (id) => document.getElementById(id);
+async function load(force) {
+  try {
+    const r = await fetch('elec.json?t=' + Date.now(), { cache: 'no-store' });
+    if (!r.ok) throw new Error('bad');
+    const d = await r.json();
+    if (d.ok === false || d.syl === null || d.syl === undefined) {
+      $('num').textContent = '--';
+      $('status').textContent = d.error || '暂时取不到数据';
+      $('warn').innerHTML = '';
+      return;
+    }
+    const s = Number(d.syl), th = Number(d.threshold || 5);
+    $('num').textContent = s;
+    $('num').className = 'num ' + (s < th ? 'low' : s < 20 ? 'warn' : 'good');
+    $('status').textContent = s < th ? '已低于提醒阈值' : '电量正常';
+    const pct = Math.max(2, Math.min(100, (s / 50) * 100));
+    const f = $('fill');
+    f.style.width = pct + '%';
+    f.style.background = s < th ? '#ff5d5d' : s < 20 ? '#ffb648' : '#3ddc97';
+    $('meter').textContent = d.meter || '—';
+    $('used').textContent = (d.used === null || d.used === undefined) ? '—' : d.used + ' 度';
+    $('at').textContent = d.at || '—';
+    $('warn').innerHTML = (d.status && s <= 0)
+      ? '<div class="alert">电表状态：' + d.status + '。请尽快充值，否则无电可用。</div>'
+      : (s < th ? '<div class="alert">剩余电量已低于 5 度，建议尽快充值。</div>' : '');
+    $('foot').textContent = '每 30 秒自动刷新 · 数据 ' + (d.at || '');
+  } catch (e) {
+    $('status').textContent = '数据读取失败，稍后重试';
+  }
+}
+$('btn').onclick = () => {
+  $('btn').textContent = '刷新中…';
+  load(true).then(() => setTimeout(() => { $('btn').textContent = '立即刷新'; }, 400));
+};
+load();
+setInterval(() => load(false), 30000);
+</script>
+</body>
+</html>
