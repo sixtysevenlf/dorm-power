@@ -1,1 +1,1 @@
-{"ok": true, "syl": 50.79, "status": "接通", "used": 0.0, "meter": "01000017", "threshold": 5, "low": false, "at": "11-20 02:02:19"}
+{"ok": true, "syl": 50.79, "status": "接通", "used": 0.0, "meter": "01000017", "low": false, "threshold": 5.0, "at": "11-20 02:03:55"}
